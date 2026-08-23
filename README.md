@@ -1,4 +1,4 @@
-# stow
+<p align="center"><img src="assets/logo.png" width="420" alt="stow"></p>
 
 A small local MCP server for Claude Code: store large text you don't need to read in full right now, search it later.
 
