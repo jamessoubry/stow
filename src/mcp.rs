@@ -82,7 +82,7 @@ fn tool_defs() -> Value {
     json!([
         {
             "name": "capture",
-            "description": "Store large text content locally (SQLite FTS5) instead of returning it in full. Use for any output you expect to be large and only need to search/reference later, not read verbatim right away. Returns a short stub with an ID; content over 2KB is always stored, smaller content is returned unchanged.",
+            "description": "Store large text content locally (SQLite FTS5) instead of returning it in full. Returns a short stub with an ID; content over 2KB is always stored, smaller content is returned unchanged. Reactive only: by the time you call this on a Bash/curl result, that output already reached full context via the tool result, so this only saves a FUTURE turn from re-fetching it, not the current one. If you can predict largeness before running a command (a paginated API call, a whole-tree grep, a big log cat), pipe it through the CLI instead: `cmd | stow store --source X --tool Y`. Use this tool for content that already arrived in context with no way to have piped it first — a Read on a file that turned out huge, a WebFetch page, an MCP response with no proxy of its own.",
             "inputSchema": {
                 "type": "object",
                 "properties": {

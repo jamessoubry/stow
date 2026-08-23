@@ -18,6 +18,8 @@ Three MCP tools:
 
 Plus a one-time `SessionStart` hook that tells the model these tools exist and when to reach for them. That's the only hook — no `PreToolUse` interception, nothing redirects or blocks another tool call. If a session doesn't use `capture`, nothing happens; it's opt-in every time, not a silent proxy sitting in front of everything.
 
+**`capture()` is reactive, not preventive.** By the time a model calls it on a tool result, that result already landed in full in its context — `capture()` afterward only helps a *future* turn skip re-fetching the same thing, it doesn't reduce the cost already paid. When largeness is predictable ahead of time (a paginated API call, a whole-tree grep, `cat`-ing a big log), pipe the command through the CLI instead of running it raw — `curl ... | stow store --source "..." --tool "..."` — so only the short `[stowed #N]` confirmation reaches the model, never the raw body. `capture()` is still the right tool for content that arrives already-in-context with no way to have piped it first (a `Read` on a file that turned out huge, a `WebFetch` page, an MCP response with no proxy of its own).
+
 ## What it deliberately doesn't do
 
 - No telemetry, no network calls, no cloud sync. Everything lives in `~/.stow/store.db`.
