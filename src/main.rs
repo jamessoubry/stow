@@ -64,7 +64,7 @@ fn main() -> Result<()> {
             match db::show(&conn, id)? {
                 Some((content, source, tool, created_at)) => {
                     println!("[#{} — {} ({}), captured {}]\n", id, source, tool, created_at);
-                    println!("{}", content);
+                    print!("{}", content);
                 }
                 None => println!("No capture found with id {}", id),
             }
