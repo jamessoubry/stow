@@ -2,8 +2,40 @@ use crate::db;
 use anyhow::Result;
 use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
+use std::process::{Command, Stdio};
 
 const THRESHOLD_BYTES: usize = 2048;
+const ICM_BIN: &str = "/home/rock/.local/bin/icm";
+
+/// Breadcrumb into ICM so a distant future session (no specstory/LCM
+/// continuity) has a chance of finding this capture via `icm recall` or
+/// `icm list -t stow-captures`, without duplicating the actual content
+/// there. Blocking, not fire-and-forget — a detached/spawned subprocess
+/// approach was tried first but failed silently under `setsid` (icm's own
+/// process/session handling doesn't tolerate it, for reasons not chased
+/// down further). Blocking with `--no-embeddings` keeps this to well under
+/// a second (embeddings generation alone was ~8s; skipping them trades
+/// semantic recall of the breadcrumb for reliability — it's still found via
+/// the fixed topic/keyword). Never fails the capture call — errors here are
+/// swallowed, since a missing breadcrumb is a discoverability gap, not a
+/// correctness one.
+pub(crate) fn breadcrumb(capture_id: i64, source: &str, tool: &str, content: &str) {
+    let gist: String = content.chars().take(120).collect();
+    let note = format!(
+        "stowed #{} — {} ({}): {}{}",
+        capture_id,
+        source,
+        tool,
+        gist,
+        if content.len() > 120 { "..." } else { "" }
+    );
+    let _ = Command::new(ICM_BIN)
+        .args(["store", "-t", "stow-captures", "-c", &note, "-i", "low", "-k", "stow", "--no-embeddings"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+}
 
 pub fn run() -> Result<()> {
     let stdin = io::stdin();
@@ -103,6 +135,7 @@ fn handle_call(req: &Value, id: Option<Value>) -> Result<Value> {
             } else {
                 let conn = db::open()?;
                 let capture_id = db::insert(&conn, content, source, tool)?;
+                breadcrumb(capture_id, source, tool, content);
                 format!(
                     "[stowed #{} — {} bytes from {} ({})]\nUse the search tool to find relevant portions, or show({}) for the full content.",
                     capture_id, content.len(), source, tool, capture_id

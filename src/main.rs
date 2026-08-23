@@ -74,6 +74,7 @@ fn main() -> Result<()> {
             io::stdin_wrapper(&mut content)?;
             let conn = db::open()?;
             let id = db::insert(&conn, &content, &source, &tool)?;
+            mcp::breadcrumb(id, &source, &tool, &content);
             println!("[stowed #{} — {} bytes from {} ({})]", id, content.len(), source, tool);
         }
         Commands::Hook { event } => match event {
